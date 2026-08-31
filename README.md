@@ -58,8 +58,18 @@ client / server 两种模式的各视图, 抓白屏与运行时报错。改完 U
 
 ## 部署
 
-`npm run build` 后把 `dist/` 静态托管即可: nginx / Caddy / Cloudflare Pages / GitHub Pages /
-与后端同机 nginx。纯静态, 无服务端渲染。
+`npm run build` 后把 `dist/` 静态托管即可: nginx / Caddy / Cloudflare Pages / 与后端同机 nginx。
+纯静态, 无服务端渲染。
+
+### GitHub Pages (自动)
+
+push 到 `main` 触发 `.github/workflows/deploy.yml`: 类型检查 → 构建 → 冒烟测试 → 发布到 Pages。
+构建时带 `--base=/<仓库名>/`, 因为项目站点挂在子路径下。
+
+**首次需在仓库 Settings → Pages 里把 Source 设为 "GitHub Actions"**, 否则部署步骤会失败。
+上线后记得把 Pages 的 origin (`https://<用户名>.github.io`) 加进后端 `gui.cors_origins`。
+
+`.github/workflows/ci.yml` 在 PR 和 push 时跑同一套检查, 不发布。
 
 ## 结构
 
