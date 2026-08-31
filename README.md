@@ -1,26 +1,45 @@
 # Mirage Console
 
-Mirage-rs 的**独立**控制 / 监控前端。从 mirage 内置 WebUI (`src/api/index.html`) 平移而来 —— 同一套界面, 改为
-跨源调用后端 `/api/v1`, 可独立部署、独立演进。
+Mirage-rs 的**独立**控制 / 监控前端。跨源调用后端 `/api/v1`, 可独立部署、独立演进。
 
 对接契约见 mirage-rs 仓的 [`docs/api-contract.md`](https://github.com/zdgt0226/Mirage-rs/blob/main/docs/api-contract.md)。
 需要后端 **v0.10.7+** (提供 `/api/v1` + CORS)。
 
-## 运行
+技术栈: **Vue 3 + TypeScript + Vite**。
 
-纯静态页, 无需构建。任意静态服务器打开 `index.html` 即可:
+## 开发
 
 ```bash
-# 本地预览
-python3 -m http.server 5173
-# 打开 http://localhost:5173 → 右下角 ⚙ 填后端地址 + token
+npm install
+npm run dev          # http://localhost:5173
 ```
 
 首次打开会自动弹**连接设置**:
 - **Mirage API 地址**: 后端 `gui.listen` 的可达地址 (含端口, 无末尾 `/`), 如 `https://gw.example.com:9090`
 - **API Token**: 后端 `gui.token` 的值 (后端没设 token 就留空)
 
-存于浏览器 `localStorage` (`mirage_api` / `mirage_token`)。右下角 ⚙ 随时改。
+存于浏览器 `localStorage` (`mirage_api` / `mirage_token`)。侧栏底部 ⚙ 随时改。
+
+### 开发期免 CORS
+
+把 API 地址**留空** (= 同源), 再用 Vite dev proxy 转发:
+
+```bash
+MIRAGE_DEV_API=https://gw.example.com:9090 npm run dev
+```
+
+`vite.config.ts` 会据此把 `/api/v1` 代理到后端, 浏览器侧无跨源, 不用配后端 CORS。
+
+## 构建 / 校验
+
+```bash
+npm run build        # vue-tsc 类型检查 + 产物到 dist/
+npm run typecheck    # 只跑类型检查
+npm run verify       # build + 冒烟测试
+```
+
+`npm run smoke` 在 jsdom 里挂载 `dist/` 产物, 用 `scripts/fixtures.mjs` 的假后端跑一遍
+client / server 两种模式的各视图, 抓白屏与运行时报错。改完 UI 至少跑一次。
 
 ## 后端要放行本页 origin (CORS)
 
@@ -35,23 +54,26 @@ python3 -m http.server 5173
 }
 ```
 - `["*"]` 可放行任意 origin (Bearer 鉴权非 cookie, 无 cookie 泄露面, 但仍建议精确白名单)。
-- 鉴权统一走 `Authorization: Bearer <token>` (本前端自动注入), 不依赖 cookie。
-
-## 开发期免 CORS (可选)
-
-不想配后端 CORS 时, 用 dev proxy 让请求同源。设置里 **API 地址留空** (=同源), 再用任意反代把
-`/api/v1` 转到后端。例 (Vite 场景可用 `server.proxy`, 或 nginx):
-```
-location /api/ { proxy_pass http://后端:9090; }
-```
+- 鉴权统一走 `Authorization: Bearer <token>` (由 `src/api/client.ts` 注入), 不依赖 cookie。
 
 ## 部署
 
-静态托管即可: nginx / Caddy / Cloudflare Pages / GitHub Pages / 与后端同机 nginx。
-只有一个 `index.html`, 传上去就行。
+`npm run build` 后把 `dist/` 静态托管即可: nginx / Caddy / Cloudflare Pages / GitHub Pages /
+与后端同机 nginx。纯静态, 无服务端渲染。
 
-## 工作原理
+## 结构
 
-`index.html` 顶部一段 **fetch shim** 把内嵌 UI 里所有相对 `fetch('/api/xxx')` 重写为
-`<配置的后端>/api/v1/xxx` 并注入 `Authorization: Bearer`。故 UI 逻辑一行未改, 只加了这层重定向 +
-连接设置面板。后续可渐进重构为 Vite + 组件化 (契约不变)。
+```
+src/
+  api/          client.ts (统一拼 baseURL + Bearer)、types.ts (后端契约)、settings.ts (地址/token)
+  components/   侧栏、顶栏、图表、KPI、连接表、规则卡片、规则/策略编辑器、连接设置弹窗
+  views/        Overview / Connections / Routing / Logs / Devices / Clients
+  composables/  useAppState (概览轮询 + 视图/模式)、usePolling、useApi、useI18n、useTheme、useSaveFlow
+  i18n/         en.ts / zh.ts
+  styles/       tokens.css (设计令牌)、app.css (跨组件公共类)
+scripts/        smoke.mjs + fixtures.mjs (jsdom 冒烟测试)
+```
+
+- 轮询跟着视图组件的生命周期走: 视图卸载, 它的 `setInterval` 就停。概览轮询 (1s) 挂在 `App.vue`,
+  顶栏速率、导航连接数、运行模式与图表历史都靠它, 切视图不断线。
+- 运行模式 (`client` / `server`) 由 `/api/v1/overview` 的 `mode` 决定, 侧栏据此隐藏不属于本模式的入口。

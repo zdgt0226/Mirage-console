@@ -1,0 +1,445 @@
+/* 全局排版与共用外壳类。组件私有样式写在各自 SFC 的 <style scoped> 里；
+   这里只保留跨组件复用的（卡片、表格、徽章、按钮、表单控件）。 */
+* {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+  background: var(--ground);
+  color: var(--text);
+  font-family: 'Hanken Grotesk', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+.mono {
+  font-family: 'JetBrains Mono', ui-monospace, 'SF Mono', monospace;
+  font-variant-numeric: tabular-nums;
+}
+.num {
+  font-variant-numeric: tabular-nums;
+}
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition: none !important;
+  }
+}
+
+/* ── 布局 ── */
+.app {
+  display: grid;
+  grid-template-columns: 232px 1fr;
+  min-height: 100vh;
+}
+.main {
+  min-width: 0;
+}
+.content {
+  padding: 24px 28px 48px;
+  max-width: 1180px;
+}
+.grid {
+  display: grid;
+  gap: 16px;
+}
+.kpis {
+  grid-template-columns: repeat(4, 1fr);
+  margin-bottom: 16px;
+}
+.cols-2 {
+  grid-template-columns: 1.3fr 1fr;
+}
+@media (max-width: 900px) {
+  .kpis {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .cols-2 {
+    grid-template-columns: 1fr;
+  }
+  .app {
+    grid-template-columns: 64px 1fr;
+  }
+  .nav-item span,
+  .nav-item .count,
+  .brand-name,
+  .brand-sub,
+  .nav-label,
+  .ver {
+    display: none;
+  }
+  .nav-item {
+    justify-content: center;
+  }
+}
+
+/* ── 卡片 ── */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+}
+.card-pad {
+  padding: 18px 20px;
+}
+.card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 15px 20px;
+  border-bottom: 1px solid var(--border);
+  gap: 10px;
+}
+.card-title {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.2px;
+}
+.card-title .hint {
+  color: var(--faint);
+  font-weight: 400;
+  margin-left: 8px;
+  font-size: 12px;
+}
+.sub-head {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.7px;
+  color: var(--faint);
+  font-weight: 600;
+  margin: 22px 4px 10px;
+}
+.scroll-x {
+  overflow-x: auto;
+}
+
+/* ── 表格 ── */
+.tbl {
+  width: 100%;
+  border-collapse: collapse;
+}
+.tbl th {
+  text-align: left;
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: var(--faint);
+  font-weight: 600;
+  padding: 10px 20px;
+  border-bottom: 1px solid var(--border);
+}
+.tbl td {
+  padding: 11px 20px;
+  border-bottom: 1px solid var(--border);
+  font-size: 13px;
+}
+.tbl tr:last-child td {
+  border-bottom: none;
+}
+.tbl tbody tr {
+  transition: background 0.1s;
+}
+.tbl tbody tr:hover {
+  background: var(--surface-2);
+}
+.tbl .r {
+  text-align: right;
+}
+.target {
+  font-weight: 500;
+}
+.dim {
+  color: var(--faint);
+}
+.empty {
+  color: var(--faint);
+  text-align: center;
+  padding: 26px;
+  font-size: 13px;
+}
+
+/* ── 徽章 / 状态 ── */
+.badge {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-family: 'JetBrains Mono', monospace;
+}
+.badge.proxy {
+  color: var(--ok);
+  background: var(--ok-soft);
+}
+.badge.direct {
+  color: var(--muted);
+  background: var(--surface-2);
+}
+.badge.block {
+  color: var(--crit);
+  background: var(--crit-soft);
+}
+.badge.udp {
+  color: var(--down);
+  background: color-mix(in srgb, var(--down) 14%, transparent);
+}
+.badge.tcp {
+  color: var(--faint);
+  background: var(--surface-2);
+}
+.status-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 5px 10px;
+  border-radius: 999px;
+}
+.status-chip.ok {
+  color: var(--ok);
+  background: var(--ok-soft);
+}
+.status-chip.off {
+  color: var(--crit);
+  background: var(--crit-soft);
+}
+.status-chip .dot {
+  width: 6px;
+  height: 6px;
+  background: currentColor;
+  box-shadow: 0 0 0 3px color-mix(in srgb, currentColor 22%, transparent);
+}
+.dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex: none;
+}
+.dot.up {
+  background: var(--up);
+}
+.dot.down {
+  background: var(--down);
+}
+.soon {
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  color: var(--warn);
+  background: var(--warn-soft);
+  padding: 3px 8px;
+  border-radius: 6px;
+}
+.stub {
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.65;
+}
+.stub code {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  background: var(--surface-2);
+  padding: 1px 5px;
+  border-radius: 5px;
+}
+
+/* ── 按钮 / 表单 ── */
+.btn {
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 8px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  transition: 0.12s;
+}
+.btn:hover {
+  background: var(--surface-2);
+  border-color: var(--border-strong);
+}
+.btn.primary {
+  background: var(--accent);
+  color: var(--accent-ink);
+  border-color: var(--accent);
+}
+.btn.primary:hover {
+  filter: brightness(1.06);
+}
+.btn-add {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  color: var(--muted);
+  border-radius: 7px;
+  padding: 6px 9px;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 13px;
+  line-height: 1;
+}
+.btn-add:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+.btn-remove {
+  background: none;
+  border: 1px solid var(--border);
+  color: var(--crit);
+  border-radius: 7px;
+  padding: 6px 10px;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 12px;
+}
+.btn-remove:hover {
+  background: var(--crit-soft);
+}
+.icon-btn {
+  background: none;
+  border: 1px solid var(--border);
+  color: var(--muted);
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  transition: 0.12s;
+}
+.icon-btn:hover {
+  border-color: var(--border-strong);
+  color: var(--text);
+  background: var(--surface-2);
+}
+.icon-btn svg {
+  width: 15px;
+  height: 15px;
+}
+.devsel {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: 7px;
+  padding: 5px 7px;
+  font-family: inherit;
+  font-size: 12px;
+  outline: none;
+}
+.devsel:focus {
+  border-color: var(--accent);
+}
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+.search {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--muted);
+}
+.search input {
+  border: none;
+  background: none;
+  outline: none;
+  color: var(--text);
+  font-family: inherit;
+  font-size: 13px;
+  width: 100%;
+}
+.search svg {
+  width: 15px;
+  height: 15px;
+}
+
+/* ── 规则卡片 (路由规则 / 用户策略共用) ── */
+.rule-card {
+  border: 1px solid var(--border);
+  border-radius: 11px;
+  padding: 14px 16px;
+}
+.rule-card + .rule-card {
+  margin-top: 12px;
+}
+.rule-top {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+.rule-n {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  color: var(--faint);
+}
+.rule-fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+  gap: 14px;
+}
+.rule-field label {
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--faint);
+  font-weight: 600;
+  display: block;
+  margin-bottom: 6px;
+}
+.rule-field input {
+  width: 100%;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 7px 9px;
+  border-radius: 7px;
+  outline: none;
+  font-family: inherit;
+  font-size: 13px;
+}
+.rule-field input:focus {
+  border-color: var(--accent);
+}
+.rule-tags-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 7px;
+}
+.rule-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  padding: 3px 8px;
+  border-radius: 7px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-family: 'JetBrains Mono', monospace;
+}
+.rule-tag span {
+  cursor: pointer;
+  opacity: 0.7;
+}
+.rule-tag span:hover {
+  opacity: 1;
+}
+.row-actions {
+  margin-left: auto;
+  display: flex;
+  gap: 6px;
+}
