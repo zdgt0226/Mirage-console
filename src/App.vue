@@ -4,6 +4,7 @@ import AppSidebar from '@/components/AppSidebar.vue'
 import AppTopbar from '@/components/AppTopbar.vue'
 import SettingsModal from '@/components/SettingsModal.vue'
 import ClientsView from '@/views/ClientsView.vue'
+import UsersView from '@/views/UsersView.vue'
 import ConnectionsView from '@/views/ConnectionsView.vue'
 import DevicesView from '@/views/DevicesView.vue'
 import LogsView from '@/views/LogsView.vue'
@@ -25,6 +26,7 @@ const VIEWS: Record<ViewId, unknown> = {
   logs: LogsView,
   devices: DevicesView,
   clients: ClientsView,
+  users: UsersView,
 }
 
 const settingsOpen = ref(false)

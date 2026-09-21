@@ -347,6 +347,43 @@ Access-Control-Max-Age: 600
 
 屏蔽应在 accept 阶段生效，并断开该 IP 现存连接。
 
+### 4.14 `GET /users` / `POST /users`（server 模式，多用户凭据）
+
+`mirage_server.users[]` 每人独立口令。**GET 绝不返 password**，只出 name + per-user 用量。
+
+```jsonc
+// GET /users 响应
+{
+  "status": "success",
+  "version": "…",                     // 乐观锁, 回传给 POST
+  "users": [
+    { "name": "default", "conns": 12, "up": 1048576, "down": 5242880, "active": 2, "in_config": true },  // 主密码
+    { "name": "alice",   "conns": 3,  "up": 0,       "down": 0,       "active": 0, "in_config": true },
+    { "name": "bob",     "conns": 5,  "up": 999,     "down": 8888,    "active": 0, "in_config": false }   // 已从配置删除, 留历史用量
+  ]
+}
+```
+
+`POST /users` 是 **op-based 增量**（**不是整表替换** —— GET 藏 password，前端拿不到既有密码做全量）。
+`?dry_run=1` 只校验不写。
+
+```jsonc
+// 请求
+{
+  "ops": [
+    { "action": "upsert", "name": "alice", "password": "新密码" },  // 增或改密 (需非空 password)
+    { "action": "remove", "name": "bob" }                          // 按名删
+  ],
+  "version": "…"   // 可选乐观锁; 不符 → 409 stale_version
+}
+// 响应
+{ "status": "success", "written": true, "version": "新版本" }
+```
+
+- 保留名 `default`（主密码）不由此管理（op 命中 → 422 `reserved_name`）。
+- 校验失败（空名/重名/空密码/坏 action）→ 422，`message` 说明，`issues[]` 明细，**未写入**。
+- 写成功后原子替换 config.json + 热重载。
+
 ---
 
 ## 5. 配置写入：规则与策略

@@ -14,6 +14,8 @@ import type {
   RulesResp,
   Stats,
   TunnelsResp,
+  UserOp,
+  UsersResp,
 } from './types'
 
 const PREFIX = '/api/v1'
@@ -85,4 +87,6 @@ export const api = {
     post<ApiResult>('/rules', { rules }, dryQuery(dry)),
   saveProfiles: (profiles: Record<string, Rule[]>, deviceProfiles: DeviceProfile[], dry: boolean) =>
     post<ApiResult>('/profiles', { profiles, device_profiles: deviceProfiles }, dryQuery(dry)),
+  users: () => get<UsersResp>('/users'),
+  saveUsers: (ops: UserOp[], dry: boolean) => post<ApiResult>('/users', { ops }, dryQuery(dry)),
 }

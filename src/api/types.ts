@@ -163,3 +163,24 @@ export interface ProfilesResp extends ApiResult {
   device_profiles?: DeviceProfile[]
   outbounds?: string[]
 }
+
+export interface UserRow {
+  name: string
+  conns: number
+  up: number
+  down: number
+  active: number
+  in_config: boolean
+}
+
+export interface UsersResp {
+  status?: string
+  version?: string
+  users?: UserRow[]
+}
+
+export interface UserOp {
+  action: 'upsert' | 'remove'
+  name: string
+  password?: string
+}
