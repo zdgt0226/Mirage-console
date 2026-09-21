@@ -2,7 +2,7 @@ import { computed, ref } from 'vue'
 import { api } from '@/api/client'
 import type { Overview, RunMode } from '@/api/types'
 
-export type ViewId = 'overview' | 'connections' | 'routing' | 'logs' | 'devices' | 'clients'
+export type ViewId = 'overview' | 'connections' | 'routing' | 'logs' | 'devices' | 'clients' | 'users'
 
 /** 图表窗口: 120 个 1s 采样点 = 近 120 秒。 */
 export const HISTORY_LEN = 120

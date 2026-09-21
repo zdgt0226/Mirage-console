@@ -23,6 +23,7 @@ const ICONS = {
     '<circle cx="6" cy="6" r="2.4"/><circle cx="6" cy="18" r="2.4"/><circle cx="18" cy="12" r="2.4"/><path d="M8 6h5a3 3 0 013 3M8 18h5a3 3 0 003-3"/>',
   devices: '<rect x="4" y="4" width="16" height="12" rx="2"/><path d="M8 20h8M12 16v4"/>',
   clients: '<circle cx="9" cy="8" r="3"/><path d="M4 20a5 5 0 0110 0M16 6a3 3 0 010 6M15 20a5 5 0 00-1-3.2"/>',
+  users: '<circle cx="8" cy="8" r="3"/><path d="M3 20a5 5 0 0110 0"/><circle cx="18" cy="9" r="2"/><path d="M18 11v5m0 0l2-2m-2 2l-2-2"/>',
 }
 
 const SECTIONS: NavSection[] = [
@@ -40,6 +41,7 @@ const SECTIONS: NavSection[] = [
     items: [
       { id: 'devices', icon: ICONS.devices, mode: 'client' },
       { id: 'clients', icon: ICONS.clients, mode: 'server' },
+      { id: 'users', icon: ICONS.users, mode: 'server' },
     ],
   },
 ]
