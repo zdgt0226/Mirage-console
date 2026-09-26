@@ -171,6 +171,12 @@ export interface UserRow {
   down: number
   active: number
   in_config: boolean
+  rate_limit_kbps: number | null
+  quota_gb: number | null
+  quota_reset_day: number | null
+  period_used_bytes: number
+  period_start: number
+  exhausted: boolean
 }
 
 export interface UsersResp {
@@ -180,7 +186,10 @@ export interface UsersResp {
 }
 
 export interface UserOp {
-  action: 'upsert' | 'remove'
+  action: 'upsert' | 'remove' | 'set_limits' | 'reset_quota'
   name: string
   password?: string
+  rate_limit_kbps?: number | null
+  quota_gb?: number | null
+  quota_reset_day?: number | null
 }
