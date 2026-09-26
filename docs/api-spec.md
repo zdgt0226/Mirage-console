@@ -347,9 +347,9 @@ Access-Control-Max-Age: 600
 
 屏蔽应在 accept 阶段生效，并断开该 IP 现存连接。
 
-### 4.14 `GET /users` / `POST /users`（server 模式，多用户凭据）
+### 4.14 `GET /users` / `POST /users`（server 模式，多用户凭据与配额限速）
 
-`mirage_server.users[]` 每人独立口令。**GET 绝不返 password**，只出 name + per-user 用量。
+`mirage_server.users[]` 每人独立口令。**GET 绝不返 password**，只出 name + per-user 用量与配额限制。
 
 ```jsonc
 // GET /users 响应
@@ -357,9 +357,48 @@ Access-Control-Max-Age: 600
   "status": "success",
   "version": "…",                     // 乐观锁, 回传给 POST
   "users": [
-    { "name": "default", "conns": 12, "up": 1048576, "down": 5242880, "active": 2, "in_config": true },  // 主密码
-    { "name": "alice",   "conns": 3,  "up": 0,       "down": 0,       "active": 0, "in_config": true },
-    { "name": "bob",     "conns": 5,  "up": 999,     "down": 8888,    "active": 0, "in_config": false }   // 已从配置删除, 留历史用量
+    {
+      "name": "default",
+      "conns": 12,
+      "up": 1048576,
+      "down": 5242880,
+      "active": 2,
+      "in_config": true,
+      "rate_limit_kbps": null,        // 限速 kbps, null=不限
+      "quota_gb": null,               // 月配额 GB (上下行合计), null=不限
+      "quota_reset_day": null,        // 每月重置日 1..=28 (UTC), null=默认 1
+      "period_used_bytes": 1048576,   // 本周期已用字节
+      "period_start": 1727308800,     // 本周期起点 unix 秒 (UTC)
+      "exhausted": false              // 是否已超额
+    },
+    {
+      "name": "alice",
+      "conns": 3,
+      "up": 0,
+      "down": 0,
+      "active": 0,
+      "in_config": true,
+      "rate_limit_kbps": 5000,        // 5 Mbps
+      "quota_gb": 10.0,               // 10 GB
+      "quota_reset_day": 1,           // 每月 1 日重置
+      "period_used_bytes": 524288000, // 已用 ~500 MB
+      "period_start": 1727308800,
+      "exhausted": false
+    },
+    {
+      "name": "bob",
+      "conns": 5,
+      "up": 999,
+      "down": 8888,
+      "active": 0,
+      "in_config": false,             // 已从配置删除, 留历史用量
+      "rate_limit_kbps": null,
+      "quota_gb": null,
+      "quota_reset_day": null,
+      "period_used_bytes": 9887,
+      "period_start": 1727308800,
+      "exhausted": false
+    }
   ]
 }
 ```
@@ -372,7 +411,15 @@ Access-Control-Max-Age: 600
 {
   "ops": [
     { "action": "upsert", "name": "alice", "password": "新密码" },  // 增或改密 (需非空 password)
-    { "action": "remove", "name": "bob" }                          // 按名删
+    { "action": "remove", "name": "bob" },                          // 按名删
+    {
+      "action": "set_limits",                                       // 设定限速与月配额
+      "name": "alice",
+      "rate_limit_kbps": 5000,                                      // 限速 kbps (>0 整数, null=不限)
+      "quota_gb": 10.0,                                             // 月配额 GB (>0 有限数, null=不限)
+      "quota_reset_day": 1                                          // 每月重置日 1..=28 整数 (null=默认 1)
+    },
+    { "action": "reset_quota", "name": "alice" }                    // 清零该用户本周期用量与超额状态
   ],
   "version": "…"   // 可选乐观锁; 不符 → 409 stale_version
 }
@@ -380,8 +427,10 @@ Access-Control-Max-Age: 600
 { "status": "success", "written": true, "version": "新版本" }
 ```
 
-- 保留名 `default`（主密码）不由此管理（op 命中 → 422 `reserved_name`）。
-- 校验失败（空名/重名/空密码/坏 action）→ 422，`message` 说明，`issues[]` 明细，**未写入**。
+- 保留名 `default`（主密码）不由此管理（op 命中 → 422 `reserved_name`，不能 `set_limits` / `reset_quota`）；`in_config=false` 的孤儿行同样不提供这些操作。
+- **`set_limits` 是三字段整体替换**：某字段不传或传 null = 清空该限制。所以前端编辑限额时**必须把三个字段的最终值一起发**（没改的字段也要带上当前值），否则会被清掉。`rate_limit_kbps` 须 >0 整数；`quota_gb` 须 >0 有限数；`quota_reset_day` 须 1..=28 整数。
+- **`reset_quota`**：只清零该用户本周期用量与超额状态，不改配置。
+- 校验失败（空名/重名/空密码/坏 action/超出范围等）→ 422，`message` 说明，`issues[]` 明细，**未写入**。
 - 写成功后原子替换 config.json + 热重载。
 
 ---

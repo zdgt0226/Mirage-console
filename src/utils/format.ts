@@ -26,6 +26,22 @@ export function fmtRateParts(n: number | undefined): [string, string] {
   return [(v < 10 ? v.toFixed(1) : Math.round(v)).toString(), u[i]]
 }
 
+/** 限速 (kbps) → "5 Mbps" / "500 kbps" / "1 Gbps"。 */
+export function fmtKbps(kbps: number | null | undefined): string {
+  if (kbps == null) return ''
+  const k = Number(kbps) || 0
+  if (k <= 0) return ''
+  if (k >= 1_000_000) {
+    const v = k / 1_000_000
+    return `${parseFloat(v.toFixed(2))} Gbps`
+  }
+  if (k >= 1_000) {
+    const v = k / 1_000
+    return `${parseFloat(v.toFixed(2))} Mbps`
+  }
+  return `${k} kbps`
+}
+
 /** 连接时长: 秒 / 分秒 / 时分。 */
 export function fmtAge(ms: number | undefined): string {
   const s = Math.floor((Number(ms) || 0) / 1000)
