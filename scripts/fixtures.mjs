@@ -40,18 +40,48 @@ export const fixtures = {
   '/devices': { devices: [{ ip: '192.168.1.20', conns: 4, up: 5, down: 6, idle_ms: 1000 }] },
   '/logs': { logs: ['2026-09-01 INFO started', '2026-09-01 ERROR boom'] },
   '/proxies': {
+    default: 'proxy',
     proxies: [
       {
         tag: 'auto',
-        type: 'Selector',
+        type: 'UrlTest',
         selected: 'hk-01',
         children: [
-          { tag: 'hk-01', latency_rtt_ms: 42, latency_http_ms: 88 },
-          { tag: 'jp-02', latency_rtt_ms: null, latency_http_ms: null },
+          { tag: 'hk-01', latency_rtt_ms: 42, latency_http_ms: 88, healthy: true },
+          { tag: 'hk-02', latency_rtt_ms: 95, latency_http_ms: 150, healthy: true },
+        ],
+      },
+      {
+        tag: 'fallback-group',
+        type: 'Fallback',
+        selected: 'us-01',
+        children: [
+          { tag: 'us-01', latency_rtt_ms: 160, latency_http_ms: 210, healthy: true },
+          { tag: 'us-02', latency_rtt_ms: 220, latency_http_ms: 310, healthy: true },
+        ],
+      },
+      {
+        tag: 'lb-group',
+        type: 'LoadBalance',
+        selected: '',
+        children: [
+          { tag: 'sg-01', latency_rtt_ms: 70, latency_http_ms: 110, healthy: true },
+          { tag: 'sg-02', latency_rtt_ms: 75, latency_http_ms: 115, healthy: true },
+        ],
+      },
+      {
+        tag: 'proxy',
+        type: 'Selector',
+        selected: 'auto',
+        children: [
+          { tag: 'auto', latency_rtt_ms: 42, latency_http_ms: 88, healthy: true },
+          { tag: 'jp-02', latency_rtt_ms: null, latency_http_ms: null, healthy: false },
+          { tag: 'direct', latency_rtt_ms: 5, latency_http_ms: 12, healthy: true },
         ],
       },
     ],
   },
+  '/proxies/select': { status: 'success' },
   '/rules': {
     status: 'success',
     rules: [{ outbound: 'proxy', domain_suffix: ['example.com'], port: [443] }],

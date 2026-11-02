@@ -20,13 +20,10 @@ usePolling(loadProxies, 5000)
 const hitColor = (outbound: string) =>
   outbound === 'direct' ? 'var(--muted)' : outbound === 'block' ? 'var(--crit)' : 'var(--ok)'
 
-async function selectProxy(group: string, target: string) {
-  try {
-    await api.selectProxy(group, target)
-    await loadProxies()
-  } catch {
-    // 切换失败时下一轮 5s 轮询会把真实选中态刷回来。
-  }
+async function selectProxy(group: string, target: string): Promise<void> {
+  const res = await api.selectProxy(group, target)
+  if (res.status !== 'success') throw new Error(res.message ?? '')
+  await loadProxies()
 }
 </script>
 
@@ -76,7 +73,12 @@ async function selectProxy(group: string, target: string) {
       <div class="card-head"><div class="card-title">{{ t('card.proxyGroups') }}</div></div>
       <div class="card-pad">
         <div v-if="!proxiesLoaded" class="empty">{{ t('empty.loading') }}</div>
-        <ProxyGroups v-else :groups="proxies.proxies ?? []" @select="selectProxy" />
+        <ProxyGroups
+          v-else
+          :groups="proxies.proxies ?? []"
+          :default="proxies.default"
+          :select="selectProxy"
+        />
       </div>
     </div>
 
