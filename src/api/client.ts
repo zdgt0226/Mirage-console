@@ -47,7 +47,16 @@ export class ApiError extends Error {
 }
 
 async function parse<T>(res: Response): Promise<T> {
-  if (!res.ok) throw new ApiError(`HTTP ${res.status} ${res.statusText}`, res.status)
+  if (!res.ok) {
+    let msg = `HTTP ${res.status} ${res.statusText}`
+    try {
+      const data = await res.json()
+      if (data && typeof data === 'object' && 'message' in data && data.message) {
+        msg = String(data.message)
+      }
+    } catch {}
+    throw new ApiError(msg, res.status)
+  }
   return (await res.json()) as T
 }
 

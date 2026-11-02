@@ -244,32 +244,46 @@ Access-Control-Max-Age: 600
 
 ```jsonc
 {
-  "proxies": [
+  "default": "proxy",                  // 当前生效的默认出站 tag (可能是组, 也可能是单节点/direct)
+  "proxies": [                         // 现按 tag 字母序稳定排序
     {
-      "tag": "auto",
-      "type": "Selector",              // "Selector" 可手切；其他类型（UrlTest 等）前端只读
-      "selected": "hk-01",
+      "tag": "proxy",
+      "type": "Selector",              // 出站组类型: "Selector" | "UrlTest" | "Fallback" | "LoadBalance"
+      "selected": "auto",              // Selector/UrlTest/Fallback: 当前生效的直接子成员 tag; LoadBalance 或尚未首次选出的 UrlTest: ""
       "children": [
-        { "tag": "hk-01", "latency_rtt_ms": 42, "latency_http_ms": 88 },
-        { "tag": "jp-02", "latency_rtt_ms": null, "latency_http_ms": null }
+        // 子成员可能本身是组 (如 selector 里套 urltest "auto")，其延迟是该组当前解析到的叶子节点延迟
+        { "tag": "auto", "latency_rtt_ms": 42, "latency_http_ms": 88, "healthy": true },
+        { "tag": "jp-02", "latency_rtt_ms": null, "latency_http_ms": null, "healthy": false }
       ]
     }
   ]
 }
 ```
 
-延迟未知给 `null`（前端显示 `—`），**不要**给 `-1` 或 `0`。
+- 出站组四种类型：
+  - `Selector`：可手动切换生效节点；
+  - `UrlTest`：按延迟自动测速选择；
+  - `Fallback`：按顺序取第一个健康节点；
+  - `LoadBalance`：在可用节点间轮询分摊流量（无固定 `selected`，取值 `""`）。
+- `children[].healthy`：子成员健康状态。向后兼容支持缺省（`undefined` 视为健康）。
+- 延迟未知给 `null`（前端显示 `—`），**不要**给 `-1` 或 `0`。
+- `proxies` 数组按 `tag` 字母序稳定排序；前端渲染时将默认出站所在的组置顶展示。
 
 ### 4.6 `POST /proxies/select`
 
 ```jsonc
 // 请求
-{ "group": "auto", "target": "jp-02" }
-// 响应
-{ "status": "success" }
+{ "group": "proxy", "target": "jp-02" }
+// 成功响应 (HTTP 200)
+{ "status": "success", "message": "Switched proxy to jp-02" }
+// 失败响应 (找不到组/目标，HTTP 404)
+{ "status": "error", "code": "not_found", "message": "找不到该出站组或目标节点", "issues": [] }
 ```
 
-前端切换后立即重拉 `/proxies` 校正。失败时前端静默，靠 5s 轮询把真实选中态刷回。
+- 仅对 `Selector` 类型的组有效。
+- 选择会持久化，重启后恢复。
+- 找不到组/目标返回 HTTP 404 JSON。
+- 前端交互：点击切换时卡片进入 pending 状态（禁止重复点击同组）并乐观更新 selected；失败时回滚并显示组内错误提示（几秒后自动消失）；成功后立即重拉 `/proxies` 校正。
 
 ### 4.7 `GET /logs`
 

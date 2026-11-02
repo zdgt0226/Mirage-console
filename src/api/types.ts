@@ -135,6 +135,7 @@ export interface ProxyNode {
   tag: string
   latency_rtt_ms?: number | null
   latency_http_ms?: number | null
+  healthy?: boolean
 }
 
 export interface ProxyGroup {
@@ -145,6 +146,7 @@ export interface ProxyGroup {
 }
 
 export interface ProxiesResp {
+  default?: string
   proxies?: ProxyGroup[]
 }
 

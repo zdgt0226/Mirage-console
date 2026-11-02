@@ -55,11 +55,15 @@ function boot(mode) {
   window.localStorage.setItem('mirage_lang', 'en')
 
   const seen = new Set()
-  window.fetch = async (url) => {
+  window.fetch = async (url, init) => {
     const path = String(url)
       .replace(/^.*\/api\/v1/, '')
       .replace(/\?.*$/, '')
     seen.add(path)
+    // 切到 jp-02 模拟后端 404, 走前端失败回滚路径。
+    if (path === '/proxies/select' && JSON.parse(init?.body ?? '{}').target === 'jp-02') {
+      return { ok: false, status: 404, statusText: 'Not Found', json: async () => ({ status: 'error', message: 'not found' }) }
+    }
     const body = path === '/overview' ? { ...fixtures['/overview'], mode } : fixtures[path]
     if (!body) return { ok: false, status: 404, statusText: 'Not Found', json: async () => ({}) }
     return { ok: true, status: 200, statusText: 'OK', json: async () => body }
@@ -109,6 +113,24 @@ const tick = (ms = 60) => new Promise((r) => setTimeout(r, ms))
   await app.clickNav('routing')
   check('rule hits', app.text().includes('17'))
   check('proxy group node', app.text().includes('hk-01'))
+  check('default outbound badge', app.text().includes('Default'))
+  check('default group first', app.window.document.querySelector('.proxy-group .group-tag')?.textContent === 'proxy')
+  check('group type badge', app.text().includes('Load Balance') && app.text().includes('Fallback'))
+  check('nested group badge', app.text().includes('Group'))
+  check('unhealthy node text', app.text().includes('unhealthy'))
+  const activeBtn = app.window.document.querySelector('button.node-btn.active')
+  check('active button has aria-pressed', activeBtn?.getAttribute('aria-pressed') === 'true')
+  const nonSelectorDivs = app.window.document.querySelectorAll('div.node-btn')
+  check('non-selector nodes are div', nonSelectorDivs.length > 0)
+  const nodeBtn = (tag) =>
+    [...app.window.document.querySelectorAll('button.node-btn')].find((x) => x.querySelector('.n-tag')?.textContent === tag)
+  nodeBtn('direct')?.dispatchEvent(new app.window.MouseEvent('click', { bubbles: true }))
+  await tick(120)
+  check('select posts to backend', app.seen.has('/proxies/select'))
+  nodeBtn('jp-02')?.dispatchEvent(new app.window.MouseEvent('click', { bubbles: true }))
+  await tick(120)
+  check('select failure shown', app.text().includes('Switch failed: not found'))
+  check('select failure rolled back', nodeBtn('auto')?.getAttribute('aria-pressed') === 'true')
   check('rule editor tag', app.text().includes('example.com'))
   check('profile card', app.inputValues().includes('kids'))
   // 设备分配的网段在 input 里，textContent 看不到，得读控件值。
